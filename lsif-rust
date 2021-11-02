@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+# rust-analyzer's path lookup looks in subdirectories by default. For example,
+# in the general case, if you have multiple parallel workspaces, under say
+# - A/B/C with crates X1, X2
+# - A/B/D with crates Y1, Y2
+# and you run rust-analyzer with A/ as the project path, it will pick up all
+# crates (X1, X2, Y1 and Y2). So it is enough to run rust-analyzer once,
+# instead of once per workspace, or once per crate.
+
+rust-analyzer lsif $HOME > $HOME/dump.lsif
