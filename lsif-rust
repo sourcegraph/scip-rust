@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+set -eux
+
 # rust-analyzer's path lookup looks in subdirectories by default. For example,
 # in the general case, if you have multiple parallel workspaces, under say
 # - A/B/C with crates X1, X2
@@ -8,4 +10,4 @@
 # crates (X1, X2, Y1 and Y2). So it is enough to run rust-analyzer once,
 # instead of once per workspace, or once per crate.
 
-rust-analyzer lsif $HOME > $HOME/dump.lsif
+rust-analyzer lsif . > dump.lsif
