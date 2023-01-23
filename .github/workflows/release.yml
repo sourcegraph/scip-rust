@@ -25,7 +25,7 @@ jobs:
         with:
           push: true
           tags: |
-            sourcegraph/lsif-rust:latest
-            sourcegraph/lsif-rust:${{ env.PATCH }}
-            sourcegraph/lsif-rust:${{ env.MINOR }}
-            sourcegraph/lsif-rust:${{ env.MAJOR }}
+            sourcegraph/scip-rust:latest
+            sourcegraph/scip-rust:${{ env.PATCH }}
+            sourcegraph/scip-rust:${{ env.MINOR }}
+            sourcegraph/scip-rust:${{ env.MAJOR }}
