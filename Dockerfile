@@ -1,4 +1,4 @@
-FROM rust:1.89.0@sha256:e090f7b4adf86191313dba91260351d7f5e15cac0fe34f26706a805c0cb9641f
+FROM rust:1.91.0@sha256:c0601cfa53ef38705af64f72b6b1f2b8afcd8f76de9aa621a8b45b4fa124694c
 
 COPY scip-rust /usr/local/bin/scip-rust
 
