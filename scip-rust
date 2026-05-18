@@ -1,6 +1,26 @@
 #!/usr/bin/env sh
 
-set -eux
+set -eu
+
+# Prefer a rust-analyzer bundled alongside this script (release-tarball layout);
+# fall back to one on PATH (Nix flake / dev shell / Docker image with rustup).
+HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+if [ -x "$HERE/rust-analyzer" ]; then
+    RA="$HERE/rust-analyzer"
+else
+    RA="rust-analyzer"
+fi
+
+# rust-analyzer shells out to cargo/rustc to read project metadata; fail fast
+# with an actionable error if the host toolchain is missing.
+for tool in cargo rustc; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "error: scip-rust requires '$tool' on PATH." >&2
+        echo "Install a Rust toolchain via rustup (https://rustup.rs)" >&2
+        echo "and add the rust-src component: rustup component add rust-src" >&2
+        exit 1
+    fi
+done
 
 # rust-analyzer's path lookup looks in subdirectories by default. For example,
 # in the general case, if you have multiple parallel workspaces, under say
@@ -10,4 +30,5 @@ set -eux
 # crates (X1, X2, Y1 and Y2). So it is enough to run rust-analyzer once,
 # instead of once per workspace, or once per crate.
 
-rust-analyzer scip . > dump.scip
+set -x
+exec "$RA" scip .
