@@ -16,11 +16,11 @@
         pkgs = import nixpkgs { inherit system; };
         scip-rust = pkgs.writeShellApplication {
           name = "scip-rust";
-          runtimeInputs = with pkgs; [
-            rust-analyzer
-            cargo
-            rustc
-          ];
+          runtimeEnv = {
+            SCIP_RUST_FALLBACK_CARGO = "${pkgs.cargo}/bin";
+            SCIP_RUST_FALLBACK_RUSTC = "${pkgs.rustc}/bin";
+            SCIP_RUST_FALLBACK_RUST_ANALYZER = "${pkgs.rust-analyzer}/bin";
+          };
           text = builtins.readFile ./scip-rust;
         };
       in

@@ -2,7 +2,19 @@
 
 set -eu
 
+# Prefer tools already on PATH (so project-pinned toolchains via rustup or
+# `rust-toolchain.toml` are honored). For any tool that is missing, fall
+# back to the per-tool path provided by the Nix package; useful in CI
+# environments without a local Rust toolchain.
 for tool in cargo rust-analyzer rustc; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        continue
+    fi
+    case "$tool" in
+        cargo) export PATH="${PATH}:${SCIP_RUST_FALLBACK_CARGO:-}" ;;
+        rustc) export PATH="${PATH}:${SCIP_RUST_FALLBACK_RUSTC:-}" ;;
+        rust-analyzer) export PATH="${PATH}:${SCIP_RUST_FALLBACK_RUST_ANALYZER:-}" ;;
+    esac
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "error: scip-rust requires '$tool' to be available." >&2
         exit 1
