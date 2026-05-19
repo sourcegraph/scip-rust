@@ -69,6 +69,8 @@
             rust-analyzer
             rustc
             cargo
+            nixfmt
+            shellcheck
           ];
         };
       }
