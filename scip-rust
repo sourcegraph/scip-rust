@@ -28,4 +28,10 @@ done
 # and you run rust-analyzer with A/ as the project path, it will pick up all
 # crates (X1, X2, Y1 and Y2). So it is enough to run rust-analyzer once,
 # instead of once per workspace, or once per crate.
-exec rust-analyzer scip .
+#
+# Forward any extra args (e.g. `--output PATH`) to rust-analyzer; default
+# to indexing the current directory if no path is given.
+if [ $# -eq 0 ]; then
+    set -- .
+fi
+exec rust-analyzer scip "$@"
