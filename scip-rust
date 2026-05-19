@@ -5,11 +5,10 @@ set -eu
 # Prefer rust-analyzer on PATH (typically a rustup shim that matches the
 # active toolchain); fall back to one bundled alongside this script
 # (release-tarball layout).
+HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+RA="$HERE/rust-analyzer"
 if command -v rust-analyzer >/dev/null 2>&1; then
     RA="rust-analyzer"
-else
-    HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-    RA="$HERE/rust-analyzer"
 fi
 
 for tool in "$RA" cargo rustc; do
