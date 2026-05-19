@@ -2,9 +2,7 @@
 
 set -eu
 
-# Prefer rust-analyzer on PATH (typically a rustup shim that matches the
-# active toolchain); fall back to one bundled alongside this script
-# (release-tarball layout).
+# Prefer rust-analyzer on PATH; fall back to one bundled next to this script.
 HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 RA="$HERE/rust-analyzer"
 if command -v rust-analyzer >/dev/null 2>&1; then
