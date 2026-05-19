@@ -5,38 +5,7 @@ on:
     tags:
       - v*
 
-env:
-  RUST_ANALYZER_VERSION: "2026-05-18"
-
 jobs:
-  release-tarballs:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    strategy:
-      matrix:
-        target:
-          - aarch64-apple-darwin
-          - x86_64-apple-darwin
-          - aarch64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build tarball
-        run: |
-          set -eux
-          STAGE=stage/scip-rust
-          mkdir -p "$STAGE"
-          curl -fL "https://github.com/rust-lang/rust-analyzer/releases/download/${RUST_ANALYZER_VERSION}/rust-analyzer-${{ matrix.target }}.gz" \
-            | gunzip > "$STAGE/rust-analyzer"
-          chmod +x "$STAGE/rust-analyzer"
-          install -m 755 scip-rust "$STAGE/scip-rust"
-          tar -C stage -czf "scip-rust-${{ matrix.target }}.tar.gz" scip-rust
-      - name: Upload to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: scip-rust-${{ matrix.target }}.tar.gz
-
   release-image:
     runs-on: ubuntu-latest
     steps:

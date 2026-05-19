@@ -2,14 +2,7 @@
 
 set -eu
 
-# Prefer rust-analyzer on PATH; fall back to one bundled next to this script.
-HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-RA="$HERE/rust-analyzer"
-if command -v rust-analyzer >/dev/null 2>&1; then
-    RA="rust-analyzer"
-fi
-
-for tool in "$RA" cargo rustc; do
+for tool in cargo rust-analyzer rustc; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "error: scip-rust requires '$tool' to be available." >&2
         exit 1
@@ -23,4 +16,4 @@ done
 # and you run rust-analyzer with A/ as the project path, it will pick up all
 # crates (X1, X2, Y1 and Y2). So it is enough to run rust-analyzer once,
 # instead of once per workspace, or once per crate.
-exec "$RA" scip .
+exec rust-analyzer scip .
