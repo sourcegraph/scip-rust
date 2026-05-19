@@ -2,22 +2,19 @@
 
 set -eu
 
-# Prefer a rust-analyzer bundled alongside this script (release-tarball layout);
-# fall back to one on PATH (Nix flake / dev shell / Docker image with rustup).
+# Prefer rust-analyzer on PATH (typically a rustup shim that matches the
+# active toolchain); fall back to one bundled alongside this script
+# (release-tarball layout).
 HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-if [ -x "$HERE/rust-analyzer" ]; then
-    RA="$HERE/rust-analyzer"
-else
-    RA="rust-analyzer"
-fi
+RA="$HERE/rust-analyzer"
+command -v rust-analyzer >/dev/null 2>&1 && RA="rust-analyzer"
 
-# rust-analyzer shells out to cargo/rustc to read project metadata; fail fast
-# with an actionable error if the host toolchain is missing.
-for tool in cargo rustc; do
+for tool in "$RA" cargo rustc; do
     if ! command -v "$tool" >/dev/null 2>&1; then
-        echo "error: scip-rust requires '$tool' on PATH." >&2
+        echo "error: scip-rust requires '$tool' to be available." >&2
         echo "Install a Rust toolchain via rustup (https://rustup.rs)" >&2
-        echo "and add the rust-src component: rustup component add rust-src" >&2
+        echo "and add the rust-analyzer and rust-src components:" >&2
+        echo "  rustup component add rust-analyzer rust-src" >&2
         exit 1
     fi
 done
