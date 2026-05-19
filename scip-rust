@@ -1,6 +1,26 @@
 #!/usr/bin/env sh
 
-set -eux
+set -eu
+
+# Prefer tools already on PATH (so project-pinned toolchains via rustup or
+# `rust-toolchain.toml` are honored). For any tool that is missing or broken
+# (e.g. a rustup proxy whose component is not installed), prepend the per-tool
+# path provided by the Nix package so it takes precedence; useful in CI
+# environments without a fully provisioned local Rust toolchain.
+for tool in cargo rust-analyzer rustc; do
+    if "$tool" --version >/dev/null 2>&1; then
+        continue
+    fi
+    case "$tool" in
+        cargo) export PATH="${SCIP_RUST_FALLBACK_CARGO:-}:${PATH}" ;;
+        rustc) export PATH="${SCIP_RUST_FALLBACK_RUSTC:-}:${PATH}" ;;
+        rust-analyzer) export PATH="${SCIP_RUST_FALLBACK_RUST_ANALYZER:-}:${PATH}" ;;
+    esac
+    if ! "$tool" --version >/dev/null 2>&1; then
+        echo "error: scip-rust requires '$tool' to be available." >&2
+        exit 1
+    fi
+done
 
 # rust-analyzer's path lookup looks in subdirectories by default. For example,
 # in the general case, if you have multiple parallel workspaces, under say
@@ -9,5 +29,10 @@ set -eux
 # and you run rust-analyzer with A/ as the project path, it will pick up all
 # crates (X1, X2, Y1 and Y2). So it is enough to run rust-analyzer once,
 # instead of once per workspace, or once per crate.
-
-rust-analyzer scip . > dump.scip
+#
+# Forward any extra args (e.g. `--output PATH`) to rust-analyzer; default
+# to indexing the current directory if no path is given.
+if [ $# -eq 0 ]; then
+    set -- .
+fi
+exec rust-analyzer scip "$@"

@@ -1,0 +1,131 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          summarize: false
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
+      - run: nix flake check
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          summarize: false
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
+
+      - name: Build docker image
+        run: nix build .#docker
+
+      - name: Load image into Docker
+        run: docker load < result
+
+      - name: Checkout target repo
+        uses: actions/checkout@v6
+        with:
+          repository: BurntSushi/ripgrep
+          ref: 15.1.0
+          path: target
+
+      - name: Index target via Docker
+        run: docker run --rm -v "$PWD/target:/work" scip-rust:latest
+
+      - name: Check index size
+        run: |
+          size=$(stat --format='%s' target/index.scip)
+          echo "Index size: $size bytes"
+          [ "$size" -ge 102400 ] || { echo "FAIL: index too small"; exit 1; }
+
+  index:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ripgrep
+            repo: BurntSushi/ripgrep
+            ref: 15.1.0
+            expect_file: crates/core/main.rs
+          - name: tokio
+            repo: tokio-rs/tokio
+            ref: tokio-1.52.3
+            expect_file: tokio/src/lib.rs
+          - name: serde
+            repo: serde-rs/serde
+            ref: v1.0.228
+            expect_file: serde/src/lib.rs
+          - name: ruff
+            repo: astral-sh/ruff
+            ref: 0.15.13
+            expect_file: crates/ruff/src/main.rs
+
+    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          summarize: false
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
+
+      - name: Build scip-rust
+        run: nix build .#scip-rust
+
+      - name: Download scip CLI
+        run: |
+          curl -fsSL https://github.com/sourcegraph/scip/releases/latest/download/scip-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin scip
+
+      - name: Checkout target repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.repo }}
+          ref: ${{ matrix.ref }}
+          path: target
+
+      - name: Fetch dependencies
+        working-directory: target
+        run: cargo fetch
+
+      - name: Run scip-rust
+        run: ./result/bin/scip-rust --output index.scip target
+
+      - name: Validate index
+        run: |
+          size=$(stat --format='%s' index.scip)
+          echo "Index size: $size bytes"
+          [ "$size" -ge 1024 ] || { echo "FAIL: index too small"; exit 1; }
+
+          scip stats --from index.scip --project-root target \
+            | jq -e '.documents > 0 and .occurrences > 0 and .definitions > 0'
+
+          scip print --json index.scip \
+            | jq -e --arg f "${{ matrix.expect_file }}" \
+                'any(.documents[]; .relative_path == $f)'
+
+  ci-pass:
+    if: always()
+    needs: [flake-check, docker, index]
+    runs-on: ubuntu-latest
+    steps:
+      - if: >-
+          contains(needs.*.result, 'failure') ||
+          contains(needs.*.result, 'cancelled')
+        run: exit 1
