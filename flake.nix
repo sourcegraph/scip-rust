@@ -48,10 +48,16 @@
           };
         };
 
-        checks.shellcheck = pkgs.runCommand "check-shellcheck" { } ''
-          ${pkgs.shellcheck}/bin/shellcheck ${./scip-rust}
-          touch $out
-        '';
+        checks = {
+          shellcheck = pkgs.runCommand "check-shellcheck" { } ''
+            ${pkgs.shellcheck}/bin/shellcheck ${./scip-rust}
+            touch $out
+          '';
+          nixfmt = pkgs.runCommand "check-nixfmt" { } ''
+            ${pkgs.nixfmt}/bin/nixfmt --check ${./flake.nix}
+            touch $out
+          '';
+        };
 
         devShells.default = pkgs.mkShellNoCC {
           buildInputs = with pkgs; [
