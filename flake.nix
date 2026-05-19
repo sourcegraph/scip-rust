@@ -53,8 +53,9 @@
             ${pkgs.shellcheck}/bin/shellcheck ${./scip-rust}
             touch $out
           '';
-          nixfmt = pkgs.runCommand "check-nixfmt" { } ''
+          formatting = pkgs.runCommand "check-formatting" { } ''
             ${pkgs.nixfmt}/bin/nixfmt --check ${./flake.nix}
+            ${pkgs.shfmt}/bin/shfmt -i 4 -ci -d ${./scip-rust}
             touch $out
           '';
           renovate = pkgs.runCommand "check-renovate" { } ''
@@ -66,11 +67,12 @@
 
         devShells.default = pkgs.mkShellNoCC {
           buildInputs = with pkgs; [
-            rust-analyzer
-            rustc
             cargo
             nixfmt
+            rust-analyzer
+            rustc
             shellcheck
+            shfmt
           ];
         };
       }
