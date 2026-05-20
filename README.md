@@ -27,8 +27,14 @@ docker run --rm -v "$PWD:/work" ghcr.io/scip-code/scip-rust
 If you use Nix, run it straight from the flake:
 
 ``` sh
-nix run github:sourcegraph/scip-rust
+nix run github:scip-code/scip-rust
 ```
+
+## Cutting releases
+
+From the `main` branch, trigger the [release workflow] via **Actions → release →
+Run workflow**, entering `M.N.P` as the version.
 
   [`rust-analyzer`]: https://rust-analyzer.github.io/book/installation.html
   [`scip-rust`]: ./scip-rust
+  [release workflow]: https://github.com/scip-code/scip-rust/actions/workflows/release.yml
