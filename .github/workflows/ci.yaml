@@ -90,7 +90,7 @@ jobs:
 
       - name: Download scip CLI
         run: |
-          curl -fsSL https://github.com/sourcegraph/scip/releases/latest/download/scip-linux-amd64.tar.gz \
+          curl -fsSL https://github.com/scip-code/scip/releases/latest/download/scip-linux-amd64.tar.gz \
             | tar -xz -C /usr/local/bin scip
 
       - name: Checkout target repo
