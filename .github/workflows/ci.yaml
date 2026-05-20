@@ -61,6 +61,10 @@ jobs:
             repo: BurntSushi/ripgrep
             ref: 15.1.0
             expect_file: crates/core/main.rs
+          - name: hyper
+            repo: hyperium/hyper
+            ref: v1.9.0
+            expect_file: src/lib.rs
           - name: serde
             repo: serde-rs/serde
             ref: v1.0.228
