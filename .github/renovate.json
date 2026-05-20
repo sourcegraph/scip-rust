@@ -16,10 +16,6 @@
       "matchManagers": ["custom.regex"],
       "matchFileNames": [".github/workflows/ci.yaml"],
       "schedule": ["* * 1 */3 *"]
-    },
-    {
-      "matchPackageNames": ["tokio-rs/tokio"],
-      "extractVersion": "^tokio-(?<version>\\d+\\.\\d+\\.\\d+)$"
     }
   ]
 }
