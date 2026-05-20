@@ -33,4 +33,3 @@ nix run github:sourcegraph/scip-rust
 
   [`rust-analyzer`]: https://rust-analyzer.github.io/book/installation.html
   [`scip-rust`]: ./scip-rust
-  [issue #5]: https://github.com/sourcegraph/scip-rust/issues/5
