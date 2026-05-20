@@ -1,31 +1,124 @@
 name: release
 
 on:
-  push:
-    tags:
-      - v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.2.3, without v prefix)"
+        required: true
+        type: string
 
 jobs:
-  release-image:
+  tag:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - run: echo "PATCH=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-      - run: echo "MINOR=${PATCH%.*}" >> $GITHUB_ENV
-      - run: echo "MAJOR=${MINOR%.*}" >> $GITHUB_ENV
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v6
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build image with Nix
+          fetch-depth: 0
+
+      - name: Validate inputs
+        env:
+          NEW_VERSION: ${{ inputs.version }}
+        run: |
+          if ! echo "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "error: version '$NEW_VERSION' does not match semantic versioning (expected X.Y.Z)"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        env:
+          NEW_VERSION: ${{ inputs.version }}
+        run: |
+          git tag "v$NEW_VERSION"
+          git push origin "v$NEW_VERSION"
+
+  create-release:
+    needs: tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ inputs.version }}
+        run: |
+          gh release create "$TAG" --title "scip-rust $TAG" --generate-notes --draft --verify-tag
+
+  docker:
+    needs: create-release
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: v${{ inputs.version }}
+      - uses: DeterminateSystems/nix-installer-action@v22
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
         run: nix build .#docker
-      - name: Tag and push
+
+      - name: Load and push arch-specific image
         run: |
           set -eux
           docker load < result
-          for TAG in latest "$PATCH" "$MINOR" "$MAJOR"; do
-            docker tag scip-rust:latest "sourcegraph/scip-rust:$TAG"
-            docker push "sourcegraph/scip-rust:$TAG"
+          ARCH_TAG="ghcr.io/scip-code/scip-rust:v${{ inputs.version }}-${{ matrix.arch }}"
+          docker tag scip-rust:latest "$ARCH_TAG"
+          docker push "$ARCH_TAG"
+
+  docker-manifest:
+    needs: docker
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifests
+        run: |
+          set -eux
+          VERSION="${{ inputs.version }}"
+          MAJOR="$(echo "$VERSION" | cut -d. -f1)"
+          MINOR="$(echo "$VERSION" | cut -d. -f1-2)"
+          AMD64="ghcr.io/scip-code/scip-rust:v${VERSION}-amd64"
+          ARM64="ghcr.io/scip-code/scip-rust:v${VERSION}-arm64"
+          for TAG in "v$VERSION" "v$MAJOR" "v$MINOR" "latest"; do
+            docker manifest create "ghcr.io/scip-code/scip-rust:$TAG" "$AMD64" "$ARM64"
+            docker manifest push "ghcr.io/scip-code/scip-rust:$TAG"
           done
+
+  publish-release:
+    needs: docker-manifest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "v${{ inputs.version }}" --repo "${{ github.repository }}" --draft=false
