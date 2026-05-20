@@ -16,10 +16,10 @@ command with a few preflight checks and toolchain fallbacks.
 
 ### Docker
 
-The `sourcegraph/scip-rust` image bundles everything:
+The `ghcr.io/scip-code/scip-rust` image bundles everything:
 
 ``` sh
-docker run --rm -v "$PWD:/work" sourcegraph/scip-rust
+docker run --rm -v "$PWD:/work" ghcr.io/scip-code/scip-rust
 ```
 
 ### Nix

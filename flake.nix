@@ -44,6 +44,9 @@
               Cmd = [ "scip-rust" ];
               WorkingDir = "/work";
               Env = [ "HOME=/tmp" ];
+              Labels = {
+                "org.opencontainers.image.source" = "https://github.com/scip-code/scip-rust";
+              };
             };
           };
         };
