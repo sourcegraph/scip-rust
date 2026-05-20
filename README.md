@@ -12,12 +12,11 @@ rust-analyzer scip .
 ```
 
 That's really all it does. The [`scip-rust`] script in this repo is the same
-command with a few preflight checks and toolchain fallbacks --- drop it into
-`PATH` if you want a stable command name.
+command with a few preflight checks and toolchain fallbacks.
 
 ### Docker
 
-For CI, the `sourcegraph/scip-rust` image bundles everything:
+The `sourcegraph/scip-rust` image bundles everything:
 
 ``` sh
 docker run --rm -v "$PWD:/work" sourcegraph/scip-rust
