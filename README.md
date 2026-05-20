@@ -31,13 +31,6 @@ If you use Nix, run it straight from the flake:
 nix run github:sourcegraph/scip-rust
 ```
 
-## Limitations
-
-`scip-rust` expects one Cargo project per run. If your repo has several
-independent crates or workspaces (or no `Cargo.toml` at the path you pass), the
-run fails. Index each project on its own and upload the results separately.
-Details in [issue #5].
-
   [`rust-analyzer`]: https://rust-analyzer.github.io/book/installation.html
   [`scip-rust`]: ./scip-rust
   [issue #5]: https://github.com/sourcegraph/scip-rust/issues/5
